@@ -1,134 +1,95 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { Plugin } from 'obsidian';
 
-// Remember to rename these classes and interfaces!
+export default class TableCollapsePlugin extends Plugin {
+   // 定义observer属性
+  observer: MutationObserver | null = null;
 
-interface MyPluginSettings {
-	mySetting: string;
-}
+  onload() {
+    console.log('加载Table Collapse Plugin');
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
+    // 添加样式
+    this.addStyles();
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+    // 使用MutationObserver监视DOM变化
+    this.observeDOM();
+  }
 
-	async onload() {
-		await this.loadSettings();
+  onunload() {
+    console.log('卸载Table Collapse Plugin');
+    // 停止观察DOM变化
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+    // 移除按钮
+    const buttons = document.querySelectorAll('.toggle-button');
+    buttons.forEach(button => button.remove());
+  }
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+  addStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+      .hidden-tbody {
+        display: none;
+      }
+      .toggle-button {
+        margin-left: 10px;
+        cursor: pointer;
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+  observeDOM() {
+    // 创建一个MutationObserver实例
+    this.observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          this.addToggleButtons();
+        }
+      });
+    });
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+    // 配置MutationObserver
+    const config = { childList: true, subtree: true };
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
-		});
+    // 开始观察特定容器（假设表格在#table-container中）
+    const container = document.querySelector('#table-container') || document.body;
+    this.observer.observe(container, config);
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+    // 初始调用，确保现有表格也添加按钮
+    this.addToggleButtons();
+  }
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
+  addToggleButtons() {
+    const tables = document.querySelectorAll('table');
+    tables.forEach(table => {
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-	}
+      if (thead && tbody) {
+        // 确保按钮添加到thead的第一个tr中
+        const firstRow = thead.querySelector('tr');
 
-	onunload() {
-
-	}
-
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const {containerEl} = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
-	}
+        if (firstRow) {
+          let button = firstRow.querySelector('.toggle-button');
+          if (!button) {
+            button = document.createElement('button');
+            button.textContent = '折叠';
+            button.classList.add('toggle-button');
+            button.addEventListener('click', () => {
+              if (tbody.classList.contains('hidden-tbody')) {
+                tbody.classList.remove('hidden-tbody');
+                button!.textContent = '折叠';
+              } else {
+                tbody.classList.add('hidden-tbody');
+                button!.textContent = '展开';
+              }
+            });
+            // 将按钮添加到第一个tr的最后
+            firstRow.appendChild(button);
+          }
+        }
+      }
+    });
+  }
 }
