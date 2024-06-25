@@ -1,8 +1,8 @@
 {
 	"id": "table-collapse-plugin",
 	"name": "Table Collapse Plugin",
-	"version": "1.0.0",
-	"minAppVersion": "0.12.0",
+	"version": "0.1.3",
+	"minAppVersion": "0.1.0",
 	"description": "Add a collapse button in the thead of the table.",
 	"author": "PandaNocturne",
 	"authorUrl": "https://github.com/PandaNocturne/obsidian-collapse-plugin",
