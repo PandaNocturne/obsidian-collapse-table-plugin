@@ -1,8 +1,29 @@
-/*
+.hidden-tbody {
+  display: none;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.table-collapse-toggle-icon {
+  cursor: pointer;
+  position: absolute;
+  top: 4px;
+  right: 0rem;
+  height: 2rem;
+  width: 2rem;
+  opacity: 0.5;
+}
 
-If your plugin does not need CSS, delete this file.
+.table-collapse-toggle-icon.collapsed::after {
+  content: '◀';
+}
 
-*/
+.table-collapse-toggle-icon.expanded::after {
+  content: '▼';
+}
+
+/* .table-collapse-toggle-icon.collapsed {
+  background-image: url('path/to/arrow-down.svg');
+}
+
+.table-collapse-toggle-icon.expanded {
+  background-image: url('path/to/arrow-up.svg'); 
+} */

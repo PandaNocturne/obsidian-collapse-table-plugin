@@ -21,7 +21,7 @@ export default class TableCollapsePlugin extends Plugin {
       this.observer.disconnect();
     }
     // 移除按钮
-    const buttons = document.querySelectorAll('.toggle-button');
+    const buttons = document.querySelectorAll('.table-collapse-toggle-button');
     buttons.forEach(button => button.remove());
   }
 
@@ -31,7 +31,7 @@ export default class TableCollapsePlugin extends Plugin {
       .hidden-tbody {
         display: none;
       }
-      .toggle-button {
+      .table-collapse-toggle-button {
         margin-left: 10px;
         cursor: pointer;
       }
@@ -63,31 +63,28 @@ export default class TableCollapsePlugin extends Plugin {
   addToggleButtons() {
     const tables = document.querySelectorAll('table');
     tables.forEach(table => {
-      const thead = table.querySelector('thead');
       const tbody = table.querySelector('tbody');
-
-      if (thead && tbody) {
-        // 确保按钮添加到thead的第一个tr中
-        const firstRow = thead.querySelector('tr');
-
-        if (firstRow) {
-          let button = firstRow.querySelector('.toggle-button');
-          if (!button) {
-            button = document.createElement('button');
-            button.textContent = '折叠';
-            button.classList.add('toggle-button');
-            button.addEventListener('click', () => {
-              if (tbody.classList.contains('hidden-tbody')) {
-                tbody.classList.remove('hidden-tbody');
-                button!.textContent = '折叠';
-              } else {
-                tbody.classList.add('hidden-tbody');
-                button!.textContent = '展开';
-              }
-            });
-            // 将按钮添加到第一个tr的最后
-            firstRow.appendChild(button);
-          }
+  
+      if (tbody) {
+        // 确保图标添加到表格右侧
+        let icon = table.querySelector('.table-collapse-toggle-icon') as HTMLElement;
+        if (!icon) {
+          icon = document.createElement('div');
+          icon.classList.add('table-collapse-toggle-icon', 'expanded');
+          icon.addEventListener('click', () => {
+            if (tbody.classList.contains('hidden-tbody')) {
+              tbody.classList.remove('hidden-tbody');
+              icon.classList.remove('collapsed');
+              icon.classList.add('expanded');
+            } else {
+              tbody.classList.add('hidden-tbody');
+              icon.classList.remove('expanded');
+              icon.classList.add('collapsed');
+            }
+          });
+          // 将图标添加到表格右侧
+          table.style.position = 'relative'; // 确保表格是相对定位
+          table.appendChild(icon);
         }
       }
     });
